@@ -1,5 +1,7 @@
 # CfgBus-GUI
 Attempt to make a "Generic" interface + gui for my projects. Call it ConfigBus (CfgBus)
+The Qui is based of qModMaster, but has been altered to such an extent that I have decided
+not to fork it, but start a new Repo instead.
 
 More details will follow, but for now:
 
