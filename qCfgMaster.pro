@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport
+QT       += core gui serialport charts multimedia
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = qCfgMaster
@@ -27,7 +27,8 @@ SOURCES +=  src/main.cpp \
             src/cfgbusentry.cpp \
             src/cfgbusmodel.cpp \
             forms/settingsdialog.cpp \
-            src/cfgbusmaster.cpp
+            src/cfgbusmaster.cpp \
+    src/chartwindow.cpp
 
 HEADERS  += 3rdparty/libmodbus/modbus.h \
             forms/about.h \
@@ -45,7 +46,8 @@ HEADERS  += 3rdparty/libmodbus/modbus.h \
             inc/cfgbusmodel.h \
             forms/settingsdialog.h \
             inc/cfgbusmaster.h \
-    inc/eutils.h
+    inc/eutils.h \
+    inc/chartwindow.h
 
 INCLUDEPATH += 3rdparty/libmodbus \
                3rdparty/QsLog \
@@ -76,7 +78,8 @@ DEFINES += QS_LOG_LINE_NUMBERS     # automatically writes the file and line for 
 FORMS    += forms/mainwindow.ui \
             forms/about.ui \
             forms/busmonitor.ui \
-    forms/settingsdialog.ui
+    forms/settingsdialog.ui \
+    forms/chartwindow.ui
 
 RESOURCES += icons/icons.qrc
 

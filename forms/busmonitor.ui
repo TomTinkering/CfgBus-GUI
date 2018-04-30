@@ -15,15 +15,18 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>560</width>
-    <height>360</height>
+    <width>200</width>
+    <height>300</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>720</width>
-    <height>720</height>
+    <width>20000</width>
+    <height>20000</height>
    </size>
+  </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::NoContextMenu</enum>
   </property>
   <property name="windowTitle">
    <string>Bus Monitor</string>
@@ -61,6 +64,12 @@
          <font>
           <pointsize>8</pointsize>
          </font>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
         </property>
         <property name="editTriggers">
          <set>QAbstractItemView::NoEditTriggers</set>
@@ -100,6 +109,15 @@
           <bold>false</bold>
          </font>
         </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
         <property name="tabChangesFocus">
          <bool>false</bool>
         </property>
@@ -116,6 +134,9 @@
    </layout>
   </widget>
   <widget class="QToolBar" name="toolBar">
+   <property name="contextMenuPolicy">
+    <enum>Qt::NoContextMenu</enum>
+   </property>
    <property name="windowTitle">
     <string notr="true">toolBar</string>
    </property>
@@ -125,6 +146,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionSave"/>
+   <addaction name="actionClear"/>
   </widget>
   <action name="actionClear">
    <property name="icon">

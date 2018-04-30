@@ -12,6 +12,7 @@
 #include "settingsdialog.h"
 #include "cfgbusmaster.h"
 #include "cfgbusmodel.h"
+#include "chartwindow.h"
 #include "MyInfoBar.h"
 
 namespace Ui {
@@ -36,6 +37,11 @@ private:
     About *m_dlgAbout;
     SettingsDialog *m_dlgSettings;
     BusMonitor *m_busMonitor;
+    ChartWindow *m_chartWindow;
+
+    //timer related
+    QTimer *m_timer;
+    int m_scanRate = 100;
 
     void updateStatusBar();
     QLabel *m_statusText;
