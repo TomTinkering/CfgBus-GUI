@@ -4,11 +4,14 @@
 #include <QUrl>
 #include <QTranslator>
 #include <QString>
+#include <Qtimer>
+
 
 #include "QsLog.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "eutils.h"
+#include "chartwindow.h"
 
 MainWindow *mainWin;
 
@@ -26,6 +29,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSettings,SIGNAL(triggered()),this,SLOT(showSettings()));
     m_busMonitor = new BusMonitor(this);//, m_model->rawModel);
     connect(ui->actionBus_Monitor,SIGNAL(triggered()),this,SLOT(showBusMonitor()));
+    m_chartWindow = new ChartWindow(this);
+
+    m_busMonitor->setWindowFlags(Qt::Widget);
+    ui->busMonLayout->addWidget(m_busMonitor);
+
+    m_chartWindow->setWindowFlags(Qt::Widget);
+    ui->chartLayout->addWidget(m_chartWindow);
 
     //UI - connections
     connect(ui->spInterval,SIGNAL(valueChanged(int)),this,SLOT(changedScanRate(int)));
@@ -74,6 +84,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->tblRegisters->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     ui->tblRegisters->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    //setup timer
+    m_timer = new QTimer(this);
+    connect(m_timer,SIGNAL(timeout()),this,SLOT(request()));
+
+    //setup charts
+//    m_chart = new ChartWidget(this);
+//    ui->gridLayout->addWidget(m_chart,1,1);
 
     QLOG_INFO()<<  "Start Program" ;
 
@@ -266,35 +284,20 @@ void MainWindow::request()
 
 void MainWindow::scan(bool value)
 {
-
-    //Request items from modbus adapter and add raw data to raw data model
-   int rowCount = m_model->rowCount();
-
-   if (value && rowCount == 0) {
-       mainWin->showUpInfoBar(tr("Request failed\nAdd items to Registers Table."), MyInfoBar::Error);
-       QLOG_WARN()<<  "Request failed. No items in registers table ";
-       ui->actionScan->setChecked(false);
-       return;
-   }
-   else {
-       mainWin->hideInfoBar();
-   }
-
-   m_model->setSlave(m_dlgSettings->settings().slave);
-
     //Start-Stop poll timer
     QLOG_INFO()<<  "Scan time = " << value;
     if (value){
-        //m_model->setScanRate(ui->spInterval->value());
-        //m_model->startPollTimer();
+        m_scanRate = ui->spInterval->value();
+        m_timer->start(m_scanRate);
     }
     else
     {
-        //m_model->stopPollTimer();
+        m_timer->stop();
     }
 
     ui->cmbBase->setEnabled(!value);
     ui->spInterval->setEnabled(!value);
+    ui->actionRead_Write->setEnabled(!value);
 
 }
 

@@ -24,9 +24,6 @@ BusMonitor::BusMonitor(QWidget *parent) : //, RawDataModel *rawDataModel) :
     ui->lstRawData->setModel(m_rawModel);
 
     //Setup Toolbar
-    ui->toolBar->addAction(ui->actionSave);
-    ui->toolBar->addAction(ui->actionClear);
-    ui->toolBar->addAction(ui->actionExit);
     connect(ui->actionSave,SIGNAL(triggered()),this,SLOT(save()));
     connect(ui->actionClear,SIGNAL(triggered()),this,SLOT(clear()));
     connect(ui->actionExit,SIGNAL(triggered()),this,SLOT(exit()));

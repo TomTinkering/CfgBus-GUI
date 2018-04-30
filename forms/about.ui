@@ -43,7 +43,7 @@
       </font>
      </property>
      <property name="text">
-      <string notr="true">QModMaster</string>
+      <string notr="true">QCfgMaster</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
