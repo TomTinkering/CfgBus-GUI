@@ -71,17 +71,17 @@ static const std::string ErrorStrings[] =
 
 static const std::string TypeStrings[] =
 {
-  "Uint16",
-  "Uint32",
-  "Uint64",
-  "Int16",
-  "Int32",
-  "Int64",
-  "Float",
-  "Double",
-  "Bool",
-  "String",
-  "Error",
+  "u16",
+  "u32",
+  "u64",
+  "i16",
+  "i32",
+  "i64",
+  "float",
+  "double",
+  "bool",
+  "str",
+  "err",
   "Unknown"
 };
 

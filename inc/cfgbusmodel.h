@@ -11,12 +11,11 @@ enum ModelColumn
 {
     IDColumn    = 0,
     AddrColumn  = 1,
-    SizeColumn  = 2,
-    RWColumn    = 3,
-    TypeColumn  = 4,
-    NameColumn  = 5,
-    ValueColumn = 6,
-    EndColumn   = 7, //should be last
+    RWColumn    = 2,
+    TypeColumn  = 3,
+    NameColumn  = 4,
+    ValueColumn = 5,
+    EndColumn   = 6 //should be last
 };
 
 }
@@ -48,6 +47,7 @@ public:
             int rows = getNrEntries()-1;
             beginRemoveRows(QModelIndex(),0,rows);
             CfgBusMaster::clearEnties();
+            m_checked.clear();
             endRemoveRows();
 
             auto topleft  = createIndex(0,0,nullptr);
@@ -70,9 +70,16 @@ public:
             beginInsertRows(QModelIndex(),1,getNrEntries()-1);
             endInsertRows();
 
+            m_checked.clear();
+            for(int i=0; i<getNrEntries(); i++)
+            {
+                m_checked.push_back(Qt::Unchecked);
+            }
+
             auto topleft  = createIndex(0,0,nullptr);
             auto btmRight = createIndex(getNrEntries()-1,Cfg::EndColumn,nullptr);
             emit dataChanged(topleft,btmRight);
+
             return true;
         }
         else
@@ -88,17 +95,30 @@ public:
     {
         if(CfgBusMaster::updateEntry(entry))
         {
-            auto topleft  = createIndex(entry,6,nullptr);
-            auto btmRight = createIndex(entry,6,nullptr);
+            auto topleft  = createIndex(entry,Cfg::ValueColumn,nullptr);
+            auto btmRight = createIndex(entry,Cfg::ValueColumn,nullptr);
             emit dataChanged(topleft,btmRight);
+
+            emit entryUpdated(this->getEntries()[entry]);
             return true;
         }
 
         return false;
     }
 
+    const QVector<Qt::CheckState>& getSelected() const
+    {
+        return m_checked;
+    }
+
+
 private:
+    QVector<Qt::CheckState> m_checked = {Qt::Unchecked};
     bool validIndex(const QModelIndex& index, int role, bool rw) const;
+
+signals:
+    void entryUpdated(const CfgBusEntry* entry);
+    void entryCheckedChanged(const CfgBusEntry* entry, Qt::CheckState);
 
 };
 

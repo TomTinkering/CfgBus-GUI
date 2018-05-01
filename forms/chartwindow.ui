@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>611</width>
-    <height>441</height>
+    <width>737</width>
+    <height>522</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -85,48 +85,69 @@
           <number>5</number>
          </property>
          <item>
-          <layout class="QVBoxLayout" name="srcALayout">
-           <item>
-            <widget class="QLabel" name="srcALabel">
-             <property name="text">
-              <string>Plot A Source</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="srcA"/>
-           </item>
-          </layout>
+          <widget class="QGroupBox" name="addBox">
+           <property name="title">
+            <string>Add Plot</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QComboBox" name="addSeries"/>
+            </item>
+            <item>
+             <widget class="QComboBox" name="addAxis"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="addBtn">
+              <property name="text">
+               <string>Add</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="sourceBLayout">
-           <item>
-            <widget class="QLabel" name="srcBLabel">
-             <property name="text">
-              <string>Plot B Source</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="srcB"/>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <spacer name="topSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
+          <widget class="QGroupBox" name="removeBox">
+           <property name="title">
+            <string>Remove Plot</string>
            </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>10</height>
-            </size>
-           </property>
-          </spacer>
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QComboBox" name="removeSeries"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="removeBtn">
+              <property name="text">
+               <string>Remove</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </item>
          <item>
           <widget class="QGroupBox" name="yAGroup">
@@ -157,10 +178,17 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="yAMin"/>
+             <widget class="QDoubleSpinBox" name="yAMin">
+              <property name="minimum">
+               <double>-10000000.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>1000000000000000.000000000000000</double>
+              </property>
+             </widget>
             </item>
             <item>
-             <widget class="QCheckBox" name="yAMinAuto_2">
+             <widget class="QCheckBox" name="yAMaxAuto">
               <property name="text">
                <string>Auto (max)</string>
               </property>
@@ -171,22 +199,6 @@
             </item>
            </layout>
           </widget>
-         </item>
-         <item>
-          <spacer name="verticalSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>10</height>
-            </size>
-           </property>
-          </spacer>
          </item>
          <item>
           <widget class="QGroupBox" name="yBGroup">
@@ -231,22 +243,6 @@
             </item>
            </layout>
           </widget>
-         </item>
-         <item>
-          <spacer name="verticalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>10</height>
-            </size>
-           </property>
-          </spacer>
          </item>
          <item>
           <widget class="QGroupBox" name="xGroup">

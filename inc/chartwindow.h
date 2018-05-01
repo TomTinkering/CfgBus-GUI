@@ -34,11 +34,18 @@
 #include <QtWidgets/QWidget>
 #include <QtCharts/QChartGlobal>
 #include <QTimer>
+#include <QString>
+#include <QMap>
+#include <QStringList>
+#include <QDateTime>
 
 QT_CHARTS_BEGIN_NAMESPACE
 class QLineSeries;
 class QChart;
 class QChartView;
+class QValueAxis;
+class QAbstractAxis;
+class QDateTimeAxis;
 QT_CHARTS_END_NAMESPACE
 
 QT_CHARTS_USE_NAMESPACE
@@ -55,32 +62,77 @@ public:
     ChartWindow(QWidget *parent = 0);
     ~ChartWindow();
 
-    void addDataPoint(int series, float point);
+    void reset();
+    void setSeriesNames(QStringList seriesNames);
+    void setEnabledState(bool en);
+    void addDataPoint(QString plotName, qreal point);
+    void removePlot(QString seriesName);
+    void addPlot(QString seriesName);
 
-    void startTimer()
+    enum YAxis
     {
-       m_timer->start(100);
-    }
-
-    enum ChartSeries
-    {
-        Series0,
-        Series1,
+        axisA,
+        axisB
     };
 
 private:
+    void updateYAAxis();
+    void updateYBAxis();
+    void updateXAxis();
+    void updateAxis();
+
+    struct MinMax
+    {
+        double min = -1;
+        double max = 1;
+    };
+
+    MinMax getAxisMinMax(YAxis axis);
+
+    //chart
     Ui::ChartWindow *m_ui;
     QChart *m_chart;
-    QVector<QLineSeries *> m_series;
-    QTimer *m_timer;
+
+    //axis
+    QValueAxis *m_xAxis;
+    QValueAxis *m_yAxisA;
+    QValueAxis *m_yAxisB;
+    double m_xNrSeconds = 10;
+    qint64 m_xStart;
+
+    qreal m_yAMax = 1;
+    qreal m_yBMax = 1;
+    qreal m_yAMin = -1;
+    qreal m_yBMin = -1;
+
+//    qreal m_xMin  = 0;
+//    qreal m_xMax  = 100;
+//    bool m_yAMinAuto = false;
+//    bool m_yAMaxAuto = false;
+//    bool m_yBMinAuto = false;
+//    bool m_yBMaxAuto = false;
+
+    //series
+    QStringList m_seriesList;
+    QMap<QString,QLineSeries *> m_series;
+    QMap<QString,YAxis> m_seriesAxes;
+    QMap<QString,double> m_seriesMin;
+    QMap<QString,double> m_seriesMax;
 
 protected:
     void closeEvent(QCloseEvent *event);
     void showEvent(QShowEvent *event);
 
 private slots:
-    void genData();
-
+    void xRangeChanged();
+    void yAMinChanged();
+    void yAMaxChanged();
+    void yAMinAutoChanged();
+    void yAMaxAutoChanged();
+    void yBMinChanged();
+    void yBMaxChanged();
+    void yBMinAutoChanged();
+    void yBMaxAutoChanged();
 };
 
 #endif // CHARTWINDOW_H

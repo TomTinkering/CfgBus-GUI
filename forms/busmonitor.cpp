@@ -29,7 +29,6 @@ BusMonitor::BusMonitor(QWidget *parent) : //, RawDataModel *rawDataModel) :
     connect(ui->actionExit,SIGNAL(triggered()),this,SLOT(exit()));
     connect(ui->lstRawData,SIGNAL(activated(QModelIndex)),this,SLOT(selectedRow(QModelIndex)));
     connect(ui->lstRawData,SIGNAL(clicked(QModelIndex)),this,SLOT(selectedRow(QModelIndex)));
-
 }
 
 BusMonitor::~BusMonitor()
@@ -348,6 +347,10 @@ void BusMonitor::busRawTxData(uint8_t * data, uint8_t dataLen)
     line = EUtils::TxTimeStamp() + line;
 
     m_rawModel->appendRow(new QStandardItem(line));
+    if(m_rawModel->rowCount() > m_MaxLines)
+        m_rawModel->removeRows(0,m_rawModel->rowCount()-m_MaxLines);
+
+    ui->lstRawData->scrollToBottom();
 
 }
 
@@ -365,6 +368,12 @@ void BusMonitor::busRawRxData(uint8_t * data, uint8_t dataLen)
     line = EUtils::RxTimeStamp() + line;
 
     m_rawModel->appendRow(new QStandardItem(line));
+
+    if(m_rawModel->rowCount() > m_MaxLines)
+        m_rawModel->removeRows(0,m_rawModel->rowCount()-m_MaxLines);
+
+     ui->lstRawData->scrollToBottom();
+
 }
 
 

@@ -121,8 +121,10 @@ public:
 
     static QString ModbusFunctionName(int index)
     {
-        if(index <= 0x10)
+        if(index <= 0x06)
             return ModbusFunctionNames[index];
+        else if(index == 0x0f || index== 0x10)
+            return ModbusFunctionNames[index-8];
         else
             return "Unknown [0x" + QString::number(index,16) + "]";
     }
