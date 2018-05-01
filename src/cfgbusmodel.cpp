@@ -25,7 +25,7 @@ bool CfgBusModel::validIndex(const QModelIndex& index, int role, bool writing) c
     if( !(index.row() >= 0 && index.row() < this->getNrEntries()) )
         return false;
 
-    if(writing)
+    if(writing && index.column() != Cfg::IDColumn)
     {
         if(!this->getEntries()[index.row()]->isWriteable())
             return false;
@@ -46,11 +46,9 @@ QVariant CfgBusModel::headerData(int section, Qt::Orientation orientation, int r
         case Cfg::IDColumn:
             return QString("ID");
         case Cfg::AddrColumn:
-            return QString("Addr.");
+            return QString("Adr[n]");
         case Cfg::RWColumn:
             return QString("R/W");
-        case Cfg::SizeColumn:
-            return QString("Size");
         case Cfg::TypeColumn:
             return QString("Type");
         case Cfg::NameColumn:
@@ -98,25 +96,19 @@ QVariant CfgBusModel::data(const QModelIndex &index, int role) const
         {
         case Cfg::IDColumn:
             return row;
-            break;
         case Cfg::AddrColumn:
-            return entry->getAddress();
-            break;
+            if(entry->getAddress() < 10)
+                return "0" + QString::number(entry->getAddress()) + " [" + QString::number(entry->getSize()) + "]";
+            else
+                return QString::number(entry->getAddress()) + " [" + QString::number(entry->getSize()) + "]";
         case Cfg::RWColumn:
             return entry->isWriteable() ? "R/W" : "R";
-            break;
-        case Cfg::SizeColumn:
-            return entry->getSize();
-            break;
         case Cfg::TypeColumn:
             return QString::fromStdString(entry->getType().toString());
-            break;
         case Cfg::NameColumn:
             return QString::fromStdString(entry->getName());
-            break;
         case Cfg::ValueColumn:
             return QString::fromStdString(entry->getValue<std::string>());
-            break;
         }
 
     case Qt::FontRole: //not implemented
@@ -130,26 +122,30 @@ QVariant CfgBusModel::data(const QModelIndex &index, int role) const
         {
         case Cfg::IDColumn:
             return Qt::AlignCenter;
-            break;
         case Cfg::RWColumn:
             return Qt::AlignLeft + Qt::AlignVCenter;
-            break;
-        case Cfg::SizeColumn:
+        case Cfg::AddrColumn:
             return Qt::AlignLeft + Qt::AlignVCenter;
-            break;
         case Cfg::TypeColumn:
             return Qt::AlignLeft + Qt::AlignVCenter;
-            break;
         case Cfg::NameColumn:
             return Qt::AlignLeft + Qt::AlignVCenter;
-            break;
         case Cfg::ValueColumn:
             return Qt::AlignLeft + Qt::AlignVCenter;
-            break;
         }
         break;
 
-    case Qt::CheckStateRole: //not implemented
+    case Qt::CheckStateRole:
+        switch(col)
+        {
+            case Cfg::IDColumn:
+               if(!m_checked.empty())
+                   return m_checked[index.row()];
+               else
+                   return Qt::Unchecked;
+            default:
+                    break;
+        }
         break;
     }
 
@@ -164,6 +160,22 @@ bool CfgBusModel::setData(const QModelIndex &index, const QVariant &value, int r
 
     if(! this->isConnected())
         return false;
+
+    auto col = index.column();
+    auto row = index.row();
+
+    if(role == Qt::CheckStateRole && col==Cfg::IDColumn)
+    {
+        if(!m_checked.empty() && m_checked.count() >= row &&  getNrEntries() >= row)
+        {
+            m_checked[row] = (m_checked[row] == Qt::Checked) ? Qt::Unchecked : Qt::Checked;
+            emit entryCheckedChanged(this->getEntries()[row], m_checked[row]);
+            emit dataChanged(index, index, QVector<int>() << role);
+            return true;
+        }
+
+        return false;
+    }
 
     if (role == Qt::EditRole && data(index, role) != value) {
 
@@ -185,6 +197,9 @@ Qt::ItemFlags CfgBusModel::flags(const QModelIndex &index) const
 
     if(!this->isConnected())
         return Qt::NoItemFlags;
+
+    if(index.column() == Cfg::IDColumn)
+        return Qt::ItemIsUserCheckable | Qt::ItemIsEditable | Qt::ItemIsSelectable | QAbstractTableModel::flags(index);
 
     if(index.column() == Cfg::ValueColumn && this->getEntries()[index.row()]->isWriteable())
         return Qt::ItemIsEditable | Qt::ItemIsSelectable | QAbstractTableModel::flags(index);

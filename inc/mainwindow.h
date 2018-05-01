@@ -53,6 +53,7 @@ private:
     void changeEvent(QEvent* event);
 
 private slots:
+    void plotEntryData(const CfgBusEntry* entry);
     void showSettings();
     void showBusMonitor();
     void changedScanRate(int value);

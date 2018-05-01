@@ -48,6 +48,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionOpenLogFile,SIGNAL(triggered()),this,SLOT(openLogFile()));
     connect(ui->actionModbus_Manual,SIGNAL(triggered()),this,SLOT(openModbusManual()));
 
+    connect(m_model, SIGNAL(entryUpdated(const CfgBusEntry*)),this,SLOT(plotEntryData(const CfgBusEntry*)));
+    //connect(m_model, SIGNAL(entryCheckedChanged(const CfgBusEntry*,Qt::CheckState))),this,SLOT()
+
     //UI - status
     m_statusInd = new QLabel;
     m_statusInd->setFixedSize( 16, 16 );
@@ -73,10 +76,9 @@ MainWindow::MainWindow(QWidget *parent) :
     updateStatusBar();
 
     //Update TableView
-    ui->tblRegisters->setColumnWidth(Cfg::IDColumn,30);
+    ui->tblRegisters->setColumnWidth(Cfg::IDColumn,45);
     ui->tblRegisters->setColumnWidth(Cfg::AddrColumn,50);
     ui->tblRegisters->setColumnWidth(Cfg::RWColumn,40);
-    ui->tblRegisters->setColumnWidth(Cfg::SizeColumn,40);
     ui->tblRegisters->setColumnWidth(Cfg::TypeColumn,60);
     ui->tblRegisters->setColumnWidth(Cfg::NameColumn,125);
     ui->tblRegisters->setColumnWidth(Cfg::ValueColumn,125);
@@ -112,9 +114,8 @@ void MainWindow::showSettings()
     auto res = m_dlgSettings->exec();
     if (res==QDialog::Accepted) {
         QLOG_INFO()<<  "Settings changes accepted ";
-        //m_model->rawModel->setMaxNoOfLines(m_dlgSettings->settings().maxMonitorLines);
-        //m_model->setTimeOut(m_dlgSettings->settings().respTimeout);
         m_model->setTimeout(m_dlgSettings->settings().respTimeout);
+        m_busMonitor->setMaxLines(m_dlgSettings->settings().maxMonitorLines);
         m_dlgSettings->saveSettings();
     }
     else
@@ -129,6 +130,11 @@ void MainWindow::showBusMonitor()
     m_busMonitor->show();
 }
 
+
+void MainWindow::plotEntryData(const CfgBusEntry* entry)
+{
+    m_chartWindow->addDataPoint(QString::fromStdString(entry->getName()),entry->getValue<float>());
+}
 
 void MainWindow::changedScanRate(int value)
 {
@@ -268,8 +274,21 @@ void MainWindow::request()
     if(m_model->getNrEntries() == 0)
         return;
 
+    //get checked states
+    auto selected = m_model->getSelected();
+    if(selected.empty() || selected.count() != m_model->getNrEntries())
+    {
+        QString msg = "Request failed\nRequest entry data. Checked-state invalid";
+        mainWin->showUpInfoBar(tr(msg.toStdString().c_str()), MyInfoBar::Error);
+        QLOG_WARN()<<  "Request failed.";
+        return;
+    }
+
     for(int i = 0; i<m_model->getNrEntries(); i++)
     {
+        if(selected[i] == Qt::Unchecked)
+            continue;
+
         if(!m_model->updateEntry(i))
         {
             QString msg = "Request failed\nUpdate Entries, on entry: " + QString::number(i);
