@@ -67,6 +67,10 @@ bool CfgBusMaster::retrieveEntryList()
         m_entries.push_back(res);
     }
 
+    //get device nam
+    if(!updateEntry(Cfg::cfg_devname))
+        return false;
+
     m_gotlist     = true;
     m_packets     = 0;
     m_errors      = 0;

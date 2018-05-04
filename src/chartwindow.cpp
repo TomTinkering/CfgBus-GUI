@@ -41,6 +41,7 @@
 #include "ui_chartwindow.h"
 #include <algorithm>
 #include <tuple>
+#include <math.h>
 
 QT_CHARTS_USE_NAMESPACE
 
@@ -54,6 +55,8 @@ ChartWindow::ChartWindow(QWidget *parent)
 {
     //setup UI
     m_ui->setupUi(this);
+    m_ui->addAxis->addItem("Y-Axis A",axisA);
+    m_ui->addAxis->addItem("Y-Axis B",axisB);
 
     m_chart->legend()->show();
     m_chart->setTitle("Acquired data from []");
@@ -63,16 +66,15 @@ ChartWindow::ChartWindow(QWidget *parent)
 
     m_xStart = QDateTime::currentDateTime().toSecsSinceEpoch();
     m_xAxis->setTickCount(10);
-    //m_xAxis->setFormat("hh:mm:ss");
-    m_xAxis->setTitleText("Time (hh:mm:ss)");
+    m_xAxis->setTitleText("Elapsed (seconds)");
 
     updateXAxis();
 
     m_yAxisA->setRange(-1, 1);
-    m_yAxisA->setTitleText("Value");
+    m_yAxisA->setTitleText("Value Y-Axis A");
 
     m_yAxisB->setRange(-1, 1);
-    m_yAxisB->setTitleText("Value");
+    m_yAxisB->setTitleText("Value Y-Axis B");
 
     m_chart->addAxis(m_xAxis,Qt::AlignBottom);
     m_chart->addAxis(m_yAxisA,Qt::AlignLeft);
@@ -111,33 +113,109 @@ ChartWindow::ChartWindow(QWidget *parent)
     connect(m_ui->yBMaxAuto,SIGNAL(released()),this,SLOT(yBMaxAutoChanged()));
 
     connect(m_ui->xRange,SIGNAL(editingFinished()),this,SLOT(xRangeChanged()));
+
+    connect(m_ui->actionAutoFitA,SIGNAL(triggered()),this,SLOT(autoFitA()));
+    connect(m_ui->actionAutoFitB,SIGNAL(triggered()),this,SLOT(autoFitB()));
+    connect(m_ui->actionClear,SIGNAL(triggered()),this,SLOT(chartReset()));
+
+    chartReset();
 }
+
+
+void ChartWindow::autoFitA()
+{
+    auto autoMin = m_ui->yAMinAuto->checkState();
+    auto autoMax = m_ui->yAMaxAuto->checkState();
+
+    m_ui->yAMaxAuto->setCheckState(Qt::Checked);
+    m_ui->yAMinAuto->setCheckState(Qt::Checked);
+
+    updateYAAxis();
+
+    m_ui->yAMaxAuto->setCheckState(autoMax);
+    m_ui->yAMinAuto->setCheckState(autoMin);
+}
+
+void ChartWindow::autoFitB()
+{
+    auto autoMin = m_ui->yBMinAuto->checkState();
+    auto autoMax = m_ui->yBMaxAuto->checkState();
+
+    m_ui->yBMaxAuto->setCheckState(Qt::Checked);
+    m_ui->yBMinAuto->setCheckState(Qt::Checked);
+
+    updateYBAxis();
+
+    m_ui->yBMaxAuto->setCheckState(autoMax);
+    m_ui->yBMinAuto->setCheckState(autoMin);
+}
+
+
+void ChartWindow::chartReset()
+{
+    m_ui->addSeries->clear();
+    m_ui->removeSeries->clear();
+
+    m_chart->removeAllSeries();
+    m_plots.clear();
+
+    m_ui->yAMinAuto->setChecked(Qt::Checked);
+    m_ui->yAMaxAuto->setChecked(Qt::Checked);
+    m_ui->yBMinAuto->setChecked(Qt::Checked);
+    m_ui->yBMaxAuto->setChecked(Qt::Checked);
+
+    m_ui->yAMin->setEnabled(false);
+    m_ui->yAMax->setEnabled(false);
+    m_ui->yBMin->setEnabled(false);
+    m_ui->yBMax->setEnabled(false);
+
+    autoFitA();
+    autoFitB();
+
+    m_ui->addSeries->addItems(m_availableSeries);
+    m_ui->addSeries->model()->sort(0);
+}
+
 
 ChartWindow::MinMax ChartWindow::getAxisMinMax(YAxis axis)
 {
     MinMax result;
+    result.yMax = std::numeric_limits<qreal>::lowest();
+    result.yMin = std::numeric_limits<qreal>::max();
+    result.xMin = m_xStart;
+    result.xMax = m_xStart;
 
-    if (m_series.empty())
-        return result;
+    auto currentXMin = m_xAxis->min();
 
-    result.min = std::numeric_limits<double>::max();
-    result.max = std::numeric_limits<double>::lowest();
-
-    for(auto series : m_series)
+    for(auto plot : m_plots)
     {
-        auto name = series->name();
-
-        if(m_seriesAxes[name] == axis)
+        if(plot.axis == axis)
         {
-            result.min = (m_seriesMin[name] < result.min) ? m_seriesMin[name] : result.min;
-            result.max = (m_seriesMax[name] > result.max) ? m_seriesMax[name] : result.max;
+            auto minMax = plot.minMax;
+
+            //if series minmax is within current x-axis range, update yMin/yMax
+            if(minMax.xMin > currentXMin || minMax.xMax > currentXMin)
+            {
+                if(minMax.yMin < result.yMin)
+                {
+                    result.yMin = minMax.yMin;
+                    result.xMin = minMax.xMin;
+                }
+
+                if(minMax.yMax > result.yMax)
+                {
+                    result.yMax = minMax.yMax;
+                    result.xMax = minMax.xMax;
+                }
+            }
+
         }
     }
 
-    if(result.min == std::numeric_limits<double>::max() || result.max == std::numeric_limits<double>::lowest())
+    if(result.yMin == std::numeric_limits<qreal>::max() || result.yMax == std::numeric_limits<qreal>::lowest())
     {
-        result.min = -1;
-        result.max = 1;
+        result.yMin = -1;
+        result.yMax = 1;
     }
 
     return result;
@@ -149,12 +227,11 @@ void ChartWindow::updateYAAxis()
     bool autoMax = m_ui->yAMaxAuto->checkState() == Qt::Checked;
 
     //if this axis is (partly) auto, determine min max
-
     if(autoMin || autoMax)
     {
         auto minMax = getAxisMinMax(axisA);
-        m_yAMin = minMax.min;
-        m_yAMax = minMax.max;
+        m_yAMin = minMax.yMin;
+        m_yAMax = minMax.yMax;
 
         if(autoMin)
             m_ui->yAMin->setValue(m_yAMin);
@@ -166,9 +243,15 @@ void ChartWindow::updateYAAxis()
     qreal min = (autoMin) ? m_yAMin : m_ui->yAMin->value();
     qreal max = (autoMax) ? m_yAMax : m_ui->yAMax->value();
 
-    //always leave some room at top and bottom of chart
-    min -= (max-min)*0.05;
-    max += (max-min)*0.05;
+    //auto calc some additional range if automatic axis
+    min -= (autoMin) ? abs(max-min)*0.05 : 0;
+    max += (autoMax) ? abs(max-min)*0.05 : 0;
+
+    if(min == max)
+    {
+        min -= 0.001;
+        max += 0.001;
+    }
 
     //update axis if necessary
     if(m_yAxisA->min() != min || m_yAxisA->max() != max)
@@ -185,8 +268,8 @@ void ChartWindow::updateYBAxis()
     if(autoMin || autoMax)
     {
         auto minMax = getAxisMinMax(axisB);
-        m_yBMin = minMax.min;
-        m_yBMax = minMax.max;
+        m_yBMin = minMax.yMin;
+        m_yBMax = minMax.yMax;
 
         if(autoMin)
             m_ui->yBMin->setValue(m_yBMin);
@@ -198,13 +281,19 @@ void ChartWindow::updateYBAxis()
     qreal min = (autoMin) ? m_yBMin : m_ui->yBMin->value();
     qreal max = (autoMax) ? m_yBMax : m_ui->yBMax->value();
 
-    //always leave some room at top and bottom of chart
-    min -= (max-min)*0.05;
-    max += (max-min)*0.05;
+    //auto calc some additional range if automatic axis
+    min -= (autoMin) ? abs(max-min)*0.05 : 0;
+    max += (autoMax) ? abs(max-min)*0.05 : 0;
+
+    if(min == max)
+    {
+        min -= 0.001;
+        max += 0.001;
+    }
 
     //update axis if necessary
-    if(m_yAxisA->min() != min || m_yAxisA->max() != max)
-        m_yAxisA->setRange(min,max);
+    if(m_yAxisB->min() != min || m_yAxisB->max() != max)
+        m_yAxisB->setRange(min,max);
 }
 
 
@@ -223,56 +312,103 @@ void ChartWindow::updateXAxis()
     m_xAxis->setRange(elapsed-m_xNrSeconds,elapsed);
 }
 
-void ChartWindow::updateAxis()
-{
-    updateYAAxis();
-    updateYBAxis();
-    updateXAxis();
-}
 
 void ChartWindow::yAMinChanged()
 {
-    auto valMin = m_ui->yAMin->value();
-    auto valMax = m_ui->yAMax->value();
+    auto min = m_ui->yAMin->value();
+    auto max = m_ui->yAMax->value();
 
-    if(valMin > valMax)
-        m_ui->yAMin->setValue(valMax - 0.01);
+    bool autoMax = m_ui->yAMaxAuto->checkState() == Qt::Checked;
+
+    if(min >= max)
+    {
+        if(autoMax)
+        {
+            min = max - 0.001;
+            m_ui->yAMin->setValue(min);
+        }
+        else
+        {
+            max = min + 0.001;
+            m_ui->yAMax->setValue(max);
+        }
+    }
 
     updateYAAxis();
 }
 
 void ChartWindow::yAMaxChanged()
 {
-    auto valMin = m_ui->yAMin->value();
-    auto valMax = m_ui->yAMax->value();
+    auto min = m_ui->yAMin->value();
+    auto max = m_ui->yAMax->value();
 
-    if(valMin > valMax)
-        m_ui->yAMax->setValue(valMin + 0.01);
+    bool autoMin = m_ui->yAMinAuto->checkState() == Qt::Checked;
+
+    if(min >= max)
+    {
+        if(autoMin)
+        {
+            max = min + 0.001;
+            m_ui->yAMax->setValue(max);
+        }
+        else
+        {
+            min = max - 0.001;
+            m_ui->yAMin->setValue(min);
+        }
+    }
 
     updateYAAxis();
 }
 
 void ChartWindow::yBMinChanged()
 {
-    auto valMin = m_ui->yBMin->value();
-    auto valMax = m_ui->yBMax->value();
+    auto min = m_ui->yBMin->value();
+    auto max = m_ui->yBMax->value();
 
-    if(valMin > valMax)
-        m_ui->yBMin->setValue(valMax - 0.01);
+    bool autoMax = m_ui->yBMaxAuto->checkState() == Qt::Checked;
 
-    updateYAAxis();
+    if(min >= max)
+    {
+        if(autoMax)
+        {
+            min = max - 0.001;
+            m_ui->yBMin->setValue(min);
+        }
+        else
+        {
+            max = min + 0.001;
+            m_ui->yBMax->setValue(max);
+        }
+    }
+
+    updateYBAxis();
 }
 
 void ChartWindow::yBMaxChanged()
 {
-    auto valMin = m_ui->yBMin->value();
-    auto valMax = m_ui->yBMax->value();
+    auto min = m_ui->yBMin->value();
+    auto max = m_ui->yBMax->value();
 
-    if(valMin > valMax)
-        m_ui->yBMax->setValue(valMin + 0.01);
+    bool autoMin = m_ui->yBMinAuto->checkState() == Qt::Checked;
 
-    updateYAAxis();
+    if(min >= max)
+    {
+        if(autoMin)
+        {
+            max = min + 0.001;
+            m_ui->yBMax->setValue(max);
+        }
+        else
+        {
+            min = max - 0.001;
+            m_ui->yBMin->setValue(min);
+        }
+    }
+
+    updateYBAxis();
 }
+
 
 void ChartWindow::yAMinAutoChanged()
 {
@@ -288,6 +424,7 @@ void ChartWindow::yAMinAutoChanged()
         m_ui->yAMin->setEnabled(true);
     }
 }
+
 
 void ChartWindow::yAMaxAutoChanged()
 {
@@ -312,7 +449,7 @@ void ChartWindow::yBMinAutoChanged()
     {
         m_ui->yBMin->setEnabled(false);
         m_ui->yBMin->setValue(m_yBMin);
-        updateYAAxis();
+        updateYBAxis();
     } //if not
     else
     {
@@ -327,7 +464,7 @@ void ChartWindow::yBMaxAutoChanged()
     {
         m_ui->yBMax->setEnabled(false);
         m_ui->yBMax->setValue(m_yBMax);
-        updateYAAxis();
+        updateYBAxis();
     } //if not
     else
     {
@@ -336,47 +473,115 @@ void ChartWindow::yBMaxAutoChanged()
 }
 
 
-void ChartWindow::removePlot(QString seriesName)
+void ChartWindow::removePlot()
 {
-    if(m_series.empty() || !m_series.contains(seriesName))
+    auto seriesName = m_ui->removeSeries->currentText();
+
+    if(m_plots.empty() || !m_plots.contains(seriesName) || seriesName == "")
         return;
 
-    m_chart->removeSeries(m_series.value(seriesName));
-    m_series.remove(seriesName);
-    m_seriesAxes.remove(seriesName);
-    m_seriesMin.remove(seriesName);
-    m_seriesMax.remove(seriesName);
+    m_chart->removeSeries(m_plots[seriesName].series);
+    m_plots.remove(seriesName);
+
+    //move seriesname from remove to add combobox
+    m_ui->addSeries->addItem(seriesName);
+    m_ui->removeSeries->removeItem(m_ui->removeSeries->currentIndex());
+    m_ui->addSeries->model()->sort(0);
 }
 
 
-void ChartWindow::addPlot(QString seriesName)
+void ChartWindow::addPlot()
 {
-    if(m_series.contains(seriesName))
+    auto seriesName = m_ui->addSeries->currentText();
+
+    if(m_plots.contains(seriesName) || seriesName == "")
         return;
 
-    auto series = new QLineSeries();
-    series->setName(seriesName);
-    m_series.insert(seriesName, series);
-    m_seriesAxes.insert(seriesName,axisA);
-    m_seriesMin.insert(seriesName,-1);
-    m_seriesMax.insert(seriesName,1);
+    PlotAdmin plot;
+
+    plot.series = new QLineSeries();
+    plot.series->setName(seriesName);
+
+    plot.axis = static_cast<YAxis>(m_ui->addAxis->currentData().toInt());
+
+    MinMax minMax;
+    minMax.yMax = std::numeric_limits<qreal>::lowest();
+    minMax.yMin = std::numeric_limits<qreal>::max();
+    minMax.xMin = m_xStart;
+    minMax.xMax = m_xStart;
+
+    plot.minMax = minMax;
+
+    m_plots.insert(seriesName,plot);
+
+    //move seriesname from add to remove combobox
+    m_ui->removeSeries->addItem(seriesName);
+    m_ui->addSeries->removeItem(m_ui->addSeries->currentIndex());
+    m_ui->removeSeries->model()->sort(0);
 
     //setup chart
-    m_chart->addSeries(series);
-    m_chart->setAxisX(m_chart->axisX(), series);
-    m_chart->setAxisY(m_chart->axisY(), series);
+    m_chart->addSeries(plot.series);
+    m_chart->setAxisX(m_chart->axisX(), plot.series);
+
+    switch(plot.axis)
+    {
+        case axisA:
+            m_chart->setAxisY(m_yAxisA, plot.series);
+            break;
+        case axisB:
+            m_chart->setAxisY(m_yAxisB,plot.series);
+            break;
+    }
 }
+
+void ChartWindow::setSeriesNames(QStringList seriesNames)
+{
+    chartReset();
+    m_ui->addSeries->addItems(seriesNames);
+    m_ui->addSeries->model()->sort(0);
+    m_availableSeries = seriesNames;
+}
+
+void ChartWindow::enableControls(bool enabled)
+{
+    m_ui->addSeries->clear();
+    m_ui->removeSeries->clear();
+
+    m_ui->addSeries->setEnabled(enabled);
+    m_ui->addBtn->setEnabled(enabled);
+    m_ui->addAxis->setEnabled(enabled);
+
+    m_ui->removeBtn->setEnabled(enabled);
+    m_ui->removeSeries->setEnabled(enabled);
+
+    m_ui->yAMin->setEnabled(enabled);
+    m_ui->yAMax->setEnabled(enabled);
+    m_ui->yAMinAuto->setEnabled(enabled);
+    m_ui->yAMaxAuto->setEnabled(enabled);
+
+    m_ui->yBMin->setEnabled(enabled);
+    m_ui->yBMax->setEnabled(enabled);
+    m_ui->yBMinAuto->setEnabled(enabled);
+    m_ui->yBMaxAuto->setEnabled(enabled);
+
+    m_ui->xRange->setEnabled(enabled);
+
+    m_ui->actionAutoFitA->setEnabled(enabled);
+    m_ui->actionAutoFitB->setEnabled(enabled);
+    m_ui->actionClear->setEnabled(enabled);
+}
+
 
 
 void ChartWindow::addDataPoint(QString seriesName, qreal point)
 {
+    if(m_plots.empty() || !m_plots.contains(seriesName))
+        return;
+
     //update x-axis
     this->updateXAxis();
 
-    if(m_series.empty() || !m_series.contains(seriesName))
-        addPlot(seriesName);
-
-    auto series = m_series.value(seriesName);
+    auto series = m_plots[seriesName].series;
 
     //build point
     qreal now = QDateTime::currentDateTime().toMSecsSinceEpoch();
@@ -389,32 +594,48 @@ void ChartWindow::addDataPoint(QString seriesName, qreal point)
     //and calculate y-axis if set to auto
     auto points = series->pointsVector();
 
-    //remove points outside of axis limits + 1s
-    while(!points.empty() && points[0].x() < (elapsed-(m_xNrSeconds+1)))
+    //remove points outside of axis limits
+    while(!points.empty() && points[0].x() < elapsed-m_xNrSeconds)
     {
+        //do not remove point if its the only point outside of axis range
+        if(points.count() >= 2 && points[1].x() >= elapsed-m_xNrSeconds)
+            break;
+
         points.remove(0);
     }
 
-    if(points.empty())
-        return;
+    series->replace(points);
 
-    //always keep track of min/max for auto features
-    qreal min = std::numeric_limits<qreal>::max();
-    qreal max = std::numeric_limits<qreal>::min();
+    //always keep track of min/avg/max for auto features
+    MinMax minMax;
+    minMax.yMax = std::numeric_limits<qreal>::lowest();
+    minMax.yMin = std::numeric_limits<qreal>::max();
+    minMax.xMin = m_xStart;
+    minMax.xMax = m_xStart;
+
+    m_plots[seriesName].avg = 0;
 
     for(int i=0; i<points.count(); i++)
     {
-        if (points[i].y() < min)
-            min = points[i].y();
+        m_plots[seriesName].avg += points[i].y();
 
-        if (points[i].y() > max)
-            max = points[i].y();
+        if (points[i].y() <= minMax.yMin)
+        {
+            minMax.yMin = points[i].y();
+            minMax.xMin = points[i].x();
+        }
+
+        if (points[i].y() >= minMax.yMax)
+        {
+            minMax.yMax = points[i].y();
+            minMax.xMax = points[i].x();
+        }
     }
 
-    m_seriesMin[seriesName] = min;
-    m_seriesMax[seriesName] = max;
+    m_plots[seriesName].minMax = minMax;
+    m_plots[seriesName].avg /= points.count();
 
-    switch(m_seriesAxes.value(seriesName))
+    switch(m_plots[seriesName].axis)
     {
         case axisA:
             this->updateYAAxis();

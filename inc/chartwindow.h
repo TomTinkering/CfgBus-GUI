@@ -64,10 +64,8 @@ public:
 
     void reset();
     void setSeriesNames(QStringList seriesNames);
-    void setEnabledState(bool en);
+    void enableControls(bool en);
     void addDataPoint(QString plotName, qreal point);
-    void removePlot(QString seriesName);
-    void addPlot(QString seriesName);
 
     enum YAxis
     {
@@ -83,8 +81,18 @@ private:
 
     struct MinMax
     {
-        double min = -1;
-        double max = 1;
+        qreal xMin;
+        qreal xMax;
+        qreal yMin;
+        qreal yMax;
+    };
+
+    struct PlotAdmin
+    {
+        QLineSeries *series;
+        YAxis axis;
+        MinMax minMax;
+        qreal avg;
     };
 
     MinMax getAxisMinMax(YAxis axis);
@@ -105,25 +113,24 @@ private:
     qreal m_yAMin = -1;
     qreal m_yBMin = -1;
 
-//    qreal m_xMin  = 0;
-//    qreal m_xMax  = 100;
-//    bool m_yAMinAuto = false;
-//    bool m_yAMaxAuto = false;
-//    bool m_yBMinAuto = false;
-//    bool m_yBMaxAuto = false;
-
     //series
-    QStringList m_seriesList;
-    QMap<QString,QLineSeries *> m_series;
-    QMap<QString,YAxis> m_seriesAxes;
-    QMap<QString,double> m_seriesMin;
-    QMap<QString,double> m_seriesMax;
+    QStringList m_availableSeries;
+    QMap<QString,PlotAdmin> m_plots;
+//    QMap<QString,QLineSeries *> m_series;
+//    QMap<QString,YAxis> m_seriesAxes;
+//    QMap<QString,MinMax> m_seriesMinMax;
+
 
 protected:
     void closeEvent(QCloseEvent *event);
     void showEvent(QShowEvent *event);
 
 private slots:
+    void autoFitA();
+    void autoFitB();
+    void chartReset();
+    void removePlot();
+    void addPlot();
     void xRangeChanged();
     void yAMinChanged();
     void yAMaxChanged();

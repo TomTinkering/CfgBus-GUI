@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionModbus_Manual,SIGNAL(triggered()),this,SLOT(openModbusManual()));
 
     connect(m_model, SIGNAL(entryUpdated(const CfgBusEntry*)),this,SLOT(plotEntryData(const CfgBusEntry*)));
-    //connect(m_model, SIGNAL(entryCheckedChanged(const CfgBusEntry*,Qt::CheckState))),this,SLOT()
+    connect(m_model, SIGNAL(packetsUpdated()),this,SLOT(packetsUpdated()));
 
     //UI - status
     m_statusInd = new QLabel;
@@ -73,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionRead_Write->setEnabled(false);
     ui->actionScan->setEnabled(false);
     ui->actionGetEntryList->setEnabled(false);
+    m_chartWindow->enableControls(false);
     updateStatusBar();
 
     //Update TableView
@@ -158,18 +159,12 @@ void MainWindow::changedConnect(bool value)
     }
     else { //Disconnected
         modbusConnect(false);
+        this->clearItems();
         QLOG_INFO()<<  "Disconnected ";
     }
 
     m_model->resetCounters();
-    refreshView();
-
-}
-
-void MainWindow::changedSlaveIP()
-{
-
-    // NOT USED
+    packetsUpdated();
 
 }
 
@@ -186,18 +181,6 @@ void MainWindow::openLogFile()
 
 }
 
-void MainWindow::openModbusManual()
-{
-
-    //Open Modbus Manual
-    QString arg;
-    QLOG_INFO()<<  "Open Modbus Manual";
-
-    arg = "file:///" + QCoreApplication::applicationDirPath() + "/ManModbus/index.html";
-    QDesktopServices::openUrl(QUrl(arg));
-
-
-}
 
 void MainWindow::updateStatusBar()
 {
@@ -224,6 +207,8 @@ void MainWindow::updateStatusBar()
         m_statusInd->setPixmap(QPixmap(":/icons/bullet-red-16.png"));
     }
 
+    packetsUpdated();
+
 }
 
 
@@ -236,6 +221,7 @@ void MainWindow::clearItems()
 
     m_model->clearEntries();
     ui->actionGetEntryList->setEnabled(m_model->isConnected());
+    m_chartWindow->enableControls(false);
 
 }
 
@@ -256,12 +242,24 @@ void MainWindow::getEntryList()
     else {
        mainWin->hideInfoBar();
        ui->actionGetEntryList->setEnabled(false);
+       ui->actionRead_Write->setEnabled(true);
+       ui->actionScan->setEnabled(true);
+       m_chartWindow->enableControls(true);
+
+       QStringList plotableSeries;
+       //select number type series names
+       for(auto entry : m_model->getEntries())
+       {
+           if (entry->getType().raw() != Cfg::t_str)
+               plotableSeries.push_back(QString::fromStdString(entry->getName()));
+       }
+
+       m_chartWindow->setSeriesNames(plotableSeries);
     }
 
     MainWindow::request();
 
 }
-
 
 void MainWindow::request()
 {
@@ -299,6 +297,7 @@ void MainWindow::request()
     }
 
     mainWin->hideInfoBar();
+    packetsUpdated();
 }
 
 void MainWindow::scan(bool value)
@@ -347,17 +346,17 @@ void MainWindow::modbusConnect(bool connect)
 
     //Update UI
     ui->actionConnect->setChecked(m_model->isConnected());
-    ui->actionRead_Write->setEnabled(m_model->isConnected());
-    ui->actionScan->setEnabled(m_model->isConnected());
     ui->actionGetEntryList->setEnabled(m_model->isConnected());
 
+    ui->actionRead_Write->setEnabled(false);
+    ui->actionScan->setEnabled(false);
+    m_chartWindow->enableControls(false);
  }
 
- void MainWindow::refreshView()
+ void MainWindow::packetsUpdated()
  {
 
      QLOG_INFO()<<  "Packets sent / received = " << m_model->getNrPackets() << ", errors = " << m_model->getNrErrors();
-     //ui->tblRegisters->resizeColumnsToContents();
 
      m_statusPackets->setText(tr("Packets : ") + QString("%1").arg(m_model->getNrPackets()));
      m_statusErrors->setText(tr("Errors : ") + QString("%1").arg(m_model->getNrErrors()));
@@ -367,6 +366,7 @@ void MainWindow::modbusConnect(bool connect)
 void MainWindow::showUpInfoBar(QString message, MyInfoBar::InfoType type)
 {
     ui->infobar->show(message, type);
+    packetsUpdated();
 }
 
 void MainWindow::hideInfoBar()
@@ -381,13 +381,5 @@ void MainWindow::changeEvent(QEvent* event)
         ui->retranslateUi(this);
     }
     QMainWindow::changeEvent(event);
-}
-
-void MainWindow::changeLanguage()
-{
-    extern QTranslator *Translator;
-    QCoreApplication::removeTranslator(Translator);
-    Translator->load(":/translations/" + QCoreApplication::applicationName() + sender()->objectName().right(6));
-    QCoreApplication::installTranslator(Translator);
 }
 

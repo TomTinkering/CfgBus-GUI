@@ -58,15 +58,12 @@ private slots:
     void showBusMonitor();
     void changedScanRate(int value);
     void changedConnect(bool value);
-    void changedSlaveIP();
     void clearItems();
     void getEntryList();
     void openLogFile();
     void scan(bool value);
     void request();
-    void refreshView();
-    void changeLanguage();
-    void openModbusManual();
+    void packetsUpdated();
 
 signals:
     void resetCounters();

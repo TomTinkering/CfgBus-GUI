@@ -28,5 +28,7 @@
         <file>cfg_logo.png</file>
         <file>list.png</file>
         <file>settings.png</file>
+        <file>scale_A.png</file>
+        <file>scale_B.png</file>
     </qresource>
 </RCC>

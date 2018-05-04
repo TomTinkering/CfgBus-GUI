@@ -103,6 +103,7 @@ public:
             return true;
         }
 
+        emit packetsUpdated();
         return false;
     }
 
@@ -119,6 +120,7 @@ private:
 signals:
     void entryUpdated(const CfgBusEntry* entry);
     void entryCheckedChanged(const CfgBusEntry* entry, Qt::CheckState);
+    void packetsUpdated();
 
 };
 
