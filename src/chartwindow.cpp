@@ -536,10 +536,8 @@ void ChartWindow::addPlot()
 
 void ChartWindow::setSeriesNames(QStringList seriesNames)
 {
-    chartReset();
-    m_ui->addSeries->addItems(seriesNames);
-    m_ui->addSeries->model()->sort(0);
     m_availableSeries = seriesNames;
+    chartReset();
 }
 
 void ChartWindow::enableControls(bool enabled)
