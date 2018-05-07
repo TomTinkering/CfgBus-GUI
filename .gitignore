@@ -20,3 +20,7 @@ Makefile*
 #QtCtreator Qml
 *.qmlproject.user
 *.qmlproject.user.*
+/releases/R001/QModMaster.log
+/releases/R001/QModMaster.log.1
+/releases/R001/QModMaster.log.2
+/releases/R001/qCfgMaster.ini
