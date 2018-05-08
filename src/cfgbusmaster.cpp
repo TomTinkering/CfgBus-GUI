@@ -123,6 +123,24 @@ bool CfgBusMaster::updateEntry(uint32_t entry)
 }
 
 
+bool CfgBusMaster::storeSettings()
+{
+    if(!m_gotlist || m_entries.empty() || !isConnected())
+         return false;
+
+    //get magic value representation on slave
+    auto magicValue = m_entries[0];
+    int nrRegs = magicValue->getSize();
+    uint16_t data[nrRegs];
+    magicValue->getRawValue(data,nrRegs,m_slaveSameEndian);
+
+    //write magic value (this stores all settings, does not change magic value)
+    if(modWrite(0,nrRegs,data) != nrRegs)
+        return false;
+
+    return true;
+}
+
 template <typename T>
 T CfgBusMaster::getEntryValue(uint32_t entry) const
 {

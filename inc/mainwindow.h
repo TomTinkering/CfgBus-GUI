@@ -55,6 +55,7 @@ private:
 private slots:
     void plotEntryData(const CfgBusEntry* entry);
     void showSettings();
+    void saveDeviceSettings();
     void showBusMonitor();
     void changedScanRate(int value);
     void changedConnect(bool value);

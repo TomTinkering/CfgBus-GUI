@@ -30,5 +30,7 @@
         <file>settings.png</file>
         <file>scale_A.png</file>
         <file>scale_B.png</file>
+        <file>store_settings.png</file>
     </qresource>
+    <qresource prefix="/"/>
 </RCC>

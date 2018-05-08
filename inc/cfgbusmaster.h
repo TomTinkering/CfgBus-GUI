@@ -20,6 +20,8 @@ public:
     template <typename T>
     bool setEntryValue(uint32_t entry, T value);
 
+    bool storeSettings();
+
     bool isConnected() const;
     void modbusDisconnect();
     bool modbusConnect(  const std::string& port,

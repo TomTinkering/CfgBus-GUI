@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionConnect,SIGNAL(toggled(bool)),this,SLOT(changedConnect(bool)));
     connect(ui->actionReset_Counters,SIGNAL(triggered()),this,SIGNAL(resetCounters()));
     connect(ui->actionOpenLogFile,SIGNAL(triggered()),this,SLOT(openLogFile()));
-    connect(ui->actionModbus_Manual,SIGNAL(triggered()),this,SLOT(openModbusManual()));
+    connect(ui->actionStoreSettings,SIGNAL(triggered()),this,SLOT(saveDeviceSettings()));
 
     connect(m_model, SIGNAL(entryUpdated(const CfgBusEntry*)),this,SLOT(plotEntryData(const CfgBusEntry*)));
     connect(m_model, SIGNAL(packetsUpdated()),this,SLOT(packetsUpdated()));
@@ -73,6 +73,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionRead_Write->setEnabled(false);
     ui->actionScan->setEnabled(false);
     ui->actionGetEntryList->setEnabled(false);
+    ui->actionStoreSettings->setEnabled(false);
+    ui->actionClear->setEnabled(false);
     m_chartWindow->enableControls(false);
     updateStatusBar();
 
@@ -122,6 +124,7 @@ void MainWindow::showSettings()
     else
         QLOG_INFO()<<  "Settings changes rejected ";
 }
+
 
 void MainWindow::showBusMonitor()
 {
@@ -244,6 +247,8 @@ void MainWindow::getEntryList()
        ui->actionGetEntryList->setEnabled(false);
        ui->actionRead_Write->setEnabled(true);
        ui->actionScan->setEnabled(true);
+       ui->actionStoreSettings->setEnabled(true);
+       ui->actionClear->setEnabled(true);
        m_chartWindow->enableControls(true);
 
        QStringList plotableSeries;
@@ -259,6 +264,29 @@ void MainWindow::getEntryList()
 
     MainWindow::request();
 
+}
+
+
+void MainWindow::saveDeviceSettings()
+{
+    QLOG_INFO()<<  "Save device settings" ;
+
+    if(!m_model->isConnected())
+        return;
+
+    if(m_model->getNrEntries() == 0)
+        return;
+
+    if(!m_model->storeSettings())
+    {
+        QString msg = "Request failed\nStore device settings. Could not store device settings";
+        mainWin->showUpInfoBar(tr(msg.toStdString().c_str()), MyInfoBar::Error);
+        QLOG_WARN()<<  "Request failed.";
+        return;
+    }
+
+    mainWin->hideInfoBar();
+    packetsUpdated();
 }
 
 void MainWindow::request()
@@ -350,6 +378,8 @@ void MainWindow::modbusConnect(bool connect)
 
     ui->actionRead_Write->setEnabled(false);
     ui->actionScan->setEnabled(false);
+    ui->actionStoreSettings->setEnabled(false);
+    ui->actionClear->setEnabled(false);
     m_chartWindow->enableControls(false);
  }
 

@@ -353,6 +353,7 @@
    <addaction name="actionRead_Write"/>
    <addaction name="actionScan"/>
    <addaction name="actionClear"/>
+   <addaction name="actionStoreSettings"/>
    <addaction name="actionReset_Counters"/>
    <addaction name="separator"/>
    <addaction name="actionOpenLogFile"/>
@@ -508,6 +509,18 @@
    </property>
    <property name="text">
     <string>GetEntryList</string>
+   </property>
+  </action>
+  <action name="actionStoreSettings">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/store_settings.png</normaloff>:/icons/store_settings.png</iconset>
+   </property>
+   <property name="text">
+    <string>StoreSettings</string>
+   </property>
+   <property name="toolTip">
+    <string>Store device settings in non-volatile memory</string>
    </property>
   </action>
  </widget>
