@@ -237,12 +237,14 @@ void MainWindow::getEntryList()
     if(!m_model->isConnected())
         return;
 
-    if (!m_model->retrieveEntryList()) {
+    if (!m_model->retrieveEntryList())
+    {
        mainWin->showUpInfoBar(tr("Request failed\nGet Configbus Slave Entry List."), MyInfoBar::Error);
        QLOG_WARN()<<  "Request failed.";
        return;
     }
-    else {
+    else
+    {
        mainWin->hideInfoBar();
        ui->actionGetEntryList->setEnabled(false);
        ui->actionRead_Write->setEnabled(true);
@@ -260,9 +262,21 @@ void MainWindow::getEntryList()
        }
 
        m_chartWindow->setSeriesNames(plotableSeries);
+
+       for(int i = 0; i<m_model->getNrEntries(); i++)
+       {
+           if(!m_model->updateEntry(i))
+           {
+               QString msg = "Request failed\nUpdate Entries, on entry: " + QString::number(i);
+               mainWin->showUpInfoBar(tr(msg.toStdString().c_str()), MyInfoBar::Error);
+               QLOG_WARN()<<  "Request failed.";
+               return;
+           }
+       }
     }
 
-    MainWindow::request();
+    mainWin->hideInfoBar();
+    packetsUpdated();
 
 }
 
